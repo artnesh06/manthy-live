@@ -1,0 +1,19 @@
+{
+  "name": "manthy",
+  "version": "1.0.0",
+  "description": "Manthy NFT Survival Game",
+  "scripts": {
+    "start": "node server/index.js",
+    "postinstall": "cd server && npm install"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.3",
+    "sql.js": "^1.10.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

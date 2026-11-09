@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Push & Deploy",
+  "description": "Push all changes to GitHub and deploy to Vercel production with one click",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "git add . && git commit -m 'update' && git push && vercel --prod"
+  }
+}

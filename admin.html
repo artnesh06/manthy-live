@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MANTHY Admin Panel</title>
+<!-- Updated: 2026-05-11 -->
+<link rel="icon" type="image/png" href="ico.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#080e08;--bg2:#0c140c;--bg3:#111a11;--bg4:#162016;
+  --green:#2d7a2d;--gl:#4caf50;--gb:#76ff03;--gn:#00e676;
+  --amber:#ffb300;--red:#f44336;--blue:#42a5f5;
+  --text:#d0e8d0;--tm:#81c784;--td:#4caf50;
+  --border:rgba(118,255,3,0.08);--border2:rgba(118,255,3,0.15);
+  --card:rgba(12,20,12,0.95);--radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+
+/* LOGIN */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;background:radial-gradient(ellipse at center,rgba(118,255,3,.03) 0%,transparent 70%);}
+.login-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:3rem;width:100%;max-width:380px;text-align:center;}
+.login-box h1{font-family:'Space Mono',monospace;color:var(--gb);font-size:20px;letter-spacing:4px;margin-bottom:4px;}
+.login-box p{color:var(--td);font-size:12px;margin-bottom:2rem;letter-spacing:2px;}
+.login-box input{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:12px 16px;font-family:'Space Mono',monospace;font-size:13px;width:100%;margin-bottom:10px;text-align:center;transition:border-color .2s;}
+.login-box input:focus{outline:none;border-color:var(--gb);box-shadow:0 0 0 3px rgba(118,255,3,.1);}
+.login-box button{background:var(--gb);color:var(--bg);border:none;padding:12px 24px;border-radius:8px;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:2px;width:100%;margin-top:6px;transition:all .2s;}
+.login-box button:hover{background:#a0ff40;box-shadow:0 0 20px rgba(118,255,3,.2);}
+.login-error{color:var(--red);font-size:12px;margin-top:10px;display:none;}
+
+/* PANEL LAYOUT */
+.panel{display:none;}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:220px;background:var(--bg2);border-right:1px solid var(--border2);padding:20px 0;z-index:100;display:flex;flex-direction:column;}
+.sidebar-logo{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.sidebar-logo h2{font-family:'Space Mono',monospace;font-size:14px;color:var(--gb);letter-spacing:3px;}
+.sidebar-logo span{font-size:10px;color:var(--td);letter-spacing:1px;}
+.sidebar-nav{flex:1;padding:8px 0;}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--tm);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;}
+.sidebar-item:hover{background:rgba(118,255,3,.04);color:var(--gb);}
+.sidebar-item.active{background:rgba(118,255,3,.08);color:var(--gb);border-left-color:var(--gb);}
+.sidebar-item .icon{font-size:16px;width:20px;text-align:center;}
+.sidebar-bottom{padding:12px 20px;border-top:1px solid var(--border);}
+.sidebar-bottom button{background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.3);color:var(--red);padding:8px 16px;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;width:100%;transition:all .15s;}
+.sidebar-bottom button:hover{background:rgba(255,23,68,.2);}
+
+.main{margin-left:220px;padding:24px 32px;min-height:100vh;}
+.main-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+.main-header h1{font-size:22px;font-weight:700;color:var(--text);}
+.main-header .status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tm);}
+.main-header .status-dot{width:8px;height:8px;border-radius:50%;background:var(--gb);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(118,255,3,.4);}50%{box-shadow:0 0 0 6px rgba(118,255,3,0);}}
+
+/* SECTIONS */
+.section{display:none;}
+.section.active{display:block;}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0;}
+.stat-card.green::after{background:var(--gb);}
+.stat-card.amber::after{background:var(--amber);}
+.stat-card.red::after{background:var(--red);}
+.stat-card.blue::after{background:var(--blue);}
+.stat-card-label{font-size:11px;font-weight:600;color:var(--tm);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.stat-card-value{font-family:'Space Mono',monospace;font-size:32px;font-weight:700;color:var(--gb);line-height:1;}
+.stat-card.amber .stat-card-value{color:var(--amber);}
+.stat-card.red .stat-card-value{color:var(--red);}
+.stat-card.blue .stat-card-value{color:var(--blue);}
+.stat-card-sub{font-size:11px;color:var(--td);margin-top:4px;}
+
+/* CHART CARDS */
+.chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px;}
+.chart-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;}
+.chart-card h3{font-size:13px;font-weight:600;color:var(--tm);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;}
+.chart-wrap{position:relative;height:220px;}
+
+/* TABLES */
+.table-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;margin-bottom:24px;}
+.table-card h3{font-size:13px;font-weight:600;color:var(--tm);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.table-card h3 .count{font-family:'Space Mono',monospace;font-size:12px;color:var(--gb);background:rgba(118,255,3,.1);padding:2px 10px;border-radius:20px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{padding:10px 12px;text-align:left;color:var(--td);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border2);background:var(--bg3);position:sticky;top:0;}
+th:first-child{border-radius:8px 0 0 0;}
+th:last-child{border-radius:0 8px 0 0;}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--tm);}
+tr:hover td{background:rgba(118,255,3,.02);}
+.table-scroll{max-height:400px;overflow-y:auto;border-radius:8px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:.5px;border-radius:20px;}
+.badge-green{background:rgba(118,255,3,.12);color:var(--gb);}
+.badge-amber{background:rgba(255,179,0,.12);color:var(--amber);}
+.badge-red{background:rgba(255,23,68,.12);color:var(--red);}
+.badge-blue{background:rgba(66,165,245,.12);color:var(--blue);}
+
+/* FORMS */
+.form-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+.form-card h3{font-size:13px;font-weight:600;color:var(--tm);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;}
+.form-row{display:flex;gap:12px;margin-bottom:12px;align-items:flex-end;}
+.form-row>div{flex:1;}
+.form-row label{display:block;font-size:10px;font-weight:600;color:var(--td);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;}
+input,select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:10px 14px;font-family:'Inter',sans-serif;font-size:13px;width:100%;transition:border-color .2s;}
+input:focus,select:focus{outline:none;border-color:var(--gb);box-shadow:0 0 0 3px rgba(118,255,3,.08);}
+.btn{border:none;padding:10px 20px;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--gb);color:var(--bg);}
+.btn-primary:hover{background:#a0ff40;box-shadow:0 0 16px rgba(118,255,3,.2);}
+.btn-danger{background:rgba(255,23,68,.15);color:var(--red);border:1px solid rgba(255,23,68,.3);}
+.btn-danger:hover{background:rgba(255,23,68,.25);}
+.btn-amber{background:rgba(255,179,0,.15);color:var(--amber);border:1px solid rgba(255,179,0,.3);}
+.btn-amber:hover{background:rgba(255,179,0,.25);}
+
+/* ACTIVITY FEED */
+.activity-feed{max-height:300px;overflow-y:auto;}
+.activity-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.activity-item:last-child{border-bottom:none;}
+.activity-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.activity-icon.feed{background:rgba(118,255,3,.1);}
+.activity-icon.catch{background:rgba(255,23,68,.1);}
+.activity-icon.stake{background:rgba(66,165,245,.1);}
+.activity-text{flex:1;font-size:12px;color:var(--tm);}
+.activity-text b{color:var(--text);}
+.activity-time{font-size:10px;color:var(--td);flex-shrink:0;}
+
+/* DANGER ZONE */
+.danger-zone{background:rgba(255,23,68,.04);border:1px solid rgba(255,23,68,.2);border-radius:var(--radius);padding:20px;margin-top:24px;}
+.danger-zone h3{color:var(--red);font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.danger-zone p{font-size:12px;color:var(--tm);margin-bottom:12px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--gb);border-radius:var(--radius);color:var(--gb);padding:14px 20px;font-size:13px;font-weight:500;display:none;z-index:999;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .sidebar{width:60px;}.sidebar-logo h2,.sidebar-logo span,.sidebar-item span:not(.icon),.sidebar-bottom{display:none;}
+  .sidebar-item{padding:12px 0;justify-content:center;}.sidebar-item .icon{font-size:20px;width:auto;}
+  .main{margin-left:60px;padding:16px;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .chart-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-screen">
+  <div class="login-box">
+    <h1>⚙️ MANTHY</h1>
+    <p>ADMIN PANEL</p>
+    <input type="text" id="login-id" placeholder="ID" autocomplete="off">
+    <input type="password" id="login-pw" placeholder="PASSWORD" autocomplete="off">
+    <button onclick="doLogin()">LOGIN</button>
+    <div class="login-error" id="login-error">Invalid credentials</div>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div class="panel" id="admin-panel">
+<div id="toast"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h2>MANTHY</h2>
+    <span>ADMIN</span>
+  </div>
+  <div class="sidebar-nav">
+    <div class="sidebar-item active" onclick="showSection('dashboard')"><span class="icon">📊</span><span>Dashboard</span></div>
+    <div class="sidebar-item" onclick="showSection('users')"><span class="icon">👥</span><span>Users</span></div>
+    <div class="sidebar-item" onclick="showSection('garden')"><span class="icon">🌿</span><span>Garden</span></div>
+    <div class="sidebar-item" onclick="showSection('museum')"><span class="icon">🏛️</span><span>Museum</span></div>
+    <div class="sidebar-item" onclick="showSection('endgame')"><span class="icon">🏆</span><span>End Game</span></div>
+    <div class="sidebar-item" onclick="showSection('settings')"><span class="icon">⚙️</span><span>Settings</span></div>
+  </div>
+  <div class="sidebar-bottom">
+    <button onclick="doLogout()">Logout</button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+  <div class="main-header">
+    <h1 id="section-title">Dashboard</h1>
+    <div class="status"><div class="status-dot" id="status-dot"></div><span id="status-text">Checking...</span></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="section active" id="sec-dashboard">
+    <div class="stat-grid">
+      <div class="stat-card green">
+        <div class="stat-card-label">Alive in Garden</div>
+        <div class="stat-card-value" id="s-alive">0</div>
+        <div class="stat-card-sub">Active NFTs</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-card-label">Weak (≤50% HP)</div>
+        <div class="stat-card-value" id="s-weak">0</div>
+        <div class="stat-card-sub">Catchable</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-card-label">In Museum</div>
+        <div class="stat-card-value" id="s-dead">0</div>
+        <div class="stat-card-sub">Caught NFTs</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-card-label">Total Users</div>
+        <div class="stat-card-value" id="sm-users">0</div>
+        <div class="stat-card-sub">Connected wallets</div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card green">
+        <div class="stat-card-label">$MTHY in Circulation</div>
+        <div class="stat-card-value" id="sm-mthy" style="font-size:24px;">0</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-card-label">Average HP</div>
+        <div class="stat-card-value" id="sm-avghp">0</div>
+        <div class="stat-card-sub">Across all NFTs</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-card-label">Total Feeds</div>
+        <div class="stat-card-value" id="sm-feeds">0</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-card-label">Win Slots</div>
+        <div class="stat-card-value" id="s-survivors">50</div>
+        <div class="stat-card-sub">Last standing</div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>HP Distribution</h3>
+        <div class="chart-wrap"><canvas id="chart-hp"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Recent Activity</h3>
+        <div class="activity-feed" id="activity-feed">
+          <div style="color:var(--td);font-size:12px;padding:20px 0;text-align:center;">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="chart-card">
+        <h3>Game Status</h3>
+        <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Catches Per Day (14d)</h3>
+        <div class="chart-wrap"><canvas id="chart-catches"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div class="section" id="sec-users">
+    <div class="table-card">
+      <h3>All Users <span class="count" id="user-count">0</span></h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Wallet</th><th>Display Name</th><th>$MTHY Balance</th><th>Joined</th><th>Last Seen</th><th>Actions</th></tr></thead>
+          <tbody id="users-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Add $MTHY to User</h3>
+      <div class="form-row">
+        <div><label>Wallet Address</label><input id="add-wallet" placeholder="cosmos1..."></div>
+        <div style="max-width:140px;"><label>Amount</label><input id="add-amount" type="number" value="1000"></div>
+        <div style="max-width:120px;padding-top:18px;"><button class="btn btn-primary" onclick="addMthy()">Add $MTHY</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GARDEN -->
+  <div class="section" id="sec-garden">
+    <div class="table-card">
+      <h3>Staked NFTs (Garden) <span class="count" id="staked-count">0</span></h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Token</th><th>Name</th><th>Owner</th><th>HP</th><th>Staked At</th><th>Last Fed</th><th>Actions</th></tr></thead>
+          <tbody id="staked-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Force Catch NFT</h3>
+      <div class="form-row">
+        <div><label>Token ID</label><input id="catch-token" placeholder="769"></div>
+        <div style="max-width:160px;padding-top:18px;"><button class="btn btn-danger" onclick="forceCatch()">Force Catch</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MUSEUM -->
+  <div class="section" id="sec-museum">
+    <div class="table-card">
+      <h3>Museum Exhibits <span class="count" id="museum-count">0</span></h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Token</th><th>Name</th><th>Original Owner</th><th>Caught By</th><th>Reason</th><th>Date</th></tr></thead>
+          <tbody id="museum-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- END GAME -->
+  <div class="section" id="sec-endgame">
+    <div class="form-card" style="border-color:rgba(255,179,0,.3);">
+      <h3 style="color:var(--amber);">🏆 End Game & Declare Winners</h3>
+      <p style="font-size:12px;color:var(--tm);margin-bottom:12px;">Declare the top 20 surviving NFTs as winners. This freezes all game activity (stake, feed, catch, cron).</p>
+      <div id="endgame-status" style="margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-amber" id="btn-endgame" onclick="endGame()">End Game & Declare Winners</button>
+        <button class="btn btn-danger" id="btn-undo-endgame" style="display:none;" onclick="undoEndGame()">Undo End Game</button>
+      </div>
+    </div>
+    <div id="winners-list" style="margin-top:16px;"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="section" id="sec-settings">
+    <div class="form-card">
+      <h3>Collection Address</h3>
+      <p style="font-size:12px;color:var(--tm);margin-bottom:12px;">The NFT collection contract address (Cosmos format). Changing this will reset the entire game.</p>
+      <div class="form-row">
+        <div><label>Cosmos Address</label><input id="cfg-cosmos-ca" placeholder="cosmos1..." readonly style="opacity:.7;"></div>
+        <div><label>Stars Address (auto)</label><input id="cfg-stars-ca" placeholder="stars1..." readonly style="opacity:.7;"></div>
+      </div>
+      <div class="form-row">
+        <div><label>New Cosmos Address</label><input id="cfg-new-ca" placeholder="cosmos1... (paste new CA to change)"></div>
+        <div style="max-width:180px;padding-top:18px;"><button class="btn btn-danger" onclick="changeCollection()">Change & Reset</button></div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Game Configuration</h3>
+      <div class="form-row">
+        <div><label>Token Name</label><input id="cfg-token-name" type="text" value="$MTHY" placeholder="e.g. $MTHY, $POINTS, $GOLD" style="font-weight:700;color:var(--gb);"></div>
+        <div><label>Base Earn Rate / Day</label><input id="cfg-earn" type="number" value="80"></div>
+        <div><label id="lbl-feed-cost">Feed Cost ($MTHY)</label><input id="cfg-feed" type="number" value="100"></div>
+      </div>
+      <div class="form-row">
+        <div><label>Museum Earn / Day</label><input id="cfg-museum" type="number" value="16"></div>
+        <div><label>Max Survivors (winners)</label><input id="cfg-survivors" type="number" value="5"></div>
+      </div>
+      <div class="form-row">
+        <div><label>Catch Threshold (HP% — catchable at or below)</label><input id="cfg-catch" type="number" value="10"></div>
+        <div><label>Min NFTs Played Before Game Can End</label><input id="cfg-minplayed" type="number" value="15"></div>
+      </div>
+      <div class="form-row">
+        <div><label>Welcome Bonus ($MTHY, per new user)</label><input id="cfg-welcome" type="number" value="300"></div>
+        <div></div>
+      </div>
+      <div class="form-row">
+        <div style="flex:1;"><label>Announcement Ticker (shown to all players — leave empty to hide)</label><textarea id="cfg-ticker" rows="2" placeholder="e.g. Feed price rising to 150 in 48h — vote in Discord!" style="width:100%;resize:vertical;"></textarea></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
+    </div>
+
+    <div class="form-card">
+      <h3>Trait Earn Bonuses</h3>
+      <p style="font-size:12px;color:var(--tm);margin-bottom:12px;">NFTs with matching traits earn extra $MTHY/day on top of the base rate. Traits are fetched from Stargaze metadata when staked. Use * as value to match any value for that trait.</p>
+      <div id="trait-rules-list"></div>
+      <div class="form-row" style="margin-top:12px;">
+        <div><label>Trait Name</label><input id="tr-name" placeholder="e.g. 1/1, Speciality, Freaky"></div>
+        <div><label>Trait Value</label><input id="tr-value" placeholder="e.g. Yes, Gold Crown, * (any)"></div>
+        <div style="max-width:120px;"><label>Bonus/Day</label><input id="tr-bonus" type="number" placeholder="40"></div>
+        <div style="max-width:100px;padding-top:18px;"><button class="btn btn-primary" onclick="addTraitRule()">Add</button></div>
+      </div>
+    </div>
+
+    <div class="danger-zone">
+      <h3>⚠️ Danger Zone</h3>
+      <p>Reset all game data. This deletes all users, staked NFTs, museum exhibits, winners, and resets all configuration. This cannot be undone.</p>
+      <button class="btn btn-danger" onclick="resetGame()">Reset Entire Game</button>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /panel -->
+
+<script>
+// Ensure we're on www to avoid Vercel redirect issues with POST requests
+if (window.location.hostname === 'manthy.fun') {
+  window.location.href = window.location.href.replace('://manthy.fun', '://www.manthy.fun');
+}
+// Auto-detect: use localhost when running locally, Contabo when on production
+// v2 - force redeploy 2026-07-13
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:3001/api'
+  : 'http://161.97.156.23/api';
+let ADMIN_KEY = '';
+let hpChart = null, statusChart = null, catchChart = null;
+
+// === SECTION NAV ===
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  const sec = document.getElementById('sec-' + name);
+  if (sec) sec.classList.add('active');
+  const items = document.querySelectorAll('.sidebar-item');
+  const map = { dashboard: 0, users: 1, garden: 2, museum: 3, endgame: 4, settings: 5 };
+  if (items[map[name]]) items[map[name]].classList.add('active');
+  const titles = { dashboard: 'Dashboard', users: 'Users', garden: 'Garden', museum: 'Museum', endgame: 'End Game', settings: 'Settings' };
+  document.getElementById('section-title').innerText = titles[name] || name;
+}
+
+// === LOGIN ===
+async function doLogin() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  try {
+    const r = await fetch(API.replace('/api','') + '/api/admin-login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ id, pw })
+    });
+    const d = await r.json();
+    if (!r.ok || !d.key) {
+      document.getElementById('login-error').style.display = 'block';
+      return;
+    }
+    ADMIN_KEY = d.key;
+    try { sessionStorage.setItem('manthy_admin', '1'); sessionStorage.setItem('manthy_admin_key', ADMIN_KEY); } catch (e) {}
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    loadAll();
+  } catch (e) {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+function doLogout() {
+  try { sessionStorage.removeItem('manthy_admin'); sessionStorage.removeItem('manthy_admin_key'); } catch (e) {}
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-id').value = '';
+  document.getElementById('login-pw').value = '';
+}
+if (sessionStorage.getItem('manthy_admin') === '1') {
+  ADMIN_KEY = sessionStorage.getItem('manthy_admin_key') || '';
+  if (ADMIN_KEY) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    setTimeout(() => loadAll(), 100);
+  }
+}
+document.getElementById('login-pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+
+// === HELPERS ===
+function adminH() { return { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY }; }
+function toast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
+function shortAddr(a) { return a ? a.slice(0, 10) + '...' + a.slice(-4) : '—'; }
+function timeAgo(d) {
+  if (!d) return '—';
+  const diff = Date.now() - new Date(d + 'Z').getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+// === CHART DEFAULTS ===
+Chart.defaults.color = '#81c784';
+Chart.defaults.borderColor = 'rgba(118,255,3,0.08)';
+Chart.defaults.font.family = "'Space Mono', monospace";
+Chart.defaults.font.size = 10;
+
+// === LOAD DATA ===
+let allStakedData = [];
+
+async function loadStats() {
+  try {
+    const r = await fetch(API + '/leaderboard/stats');
+    const d = await r.json();
+    document.getElementById('s-alive').innerText = d.alive;
+    document.getElementById('s-weak').innerText = d.weak;
+    document.getElementById('s-dead').innerText = d.dead;
+    document.getElementById('s-survivors').innerText = d.survivors;
+  } catch (e) {}
+}
+
+async function loadHealth() {
+  try {
+    const r = await fetch(API + '/health');
+    const d = await r.json();
+    document.getElementById('status-dot').style.background = 'var(--gb)';
+    document.getElementById('status-text').innerText = 'Online — ' + (d.timestamp || '');
+  } catch (e) {
+    document.getElementById('status-dot').style.background = 'var(--red)';
+    document.getElementById('status-text').innerText = 'Offline';
+  }
+}
+
+async function loadSummary() {
+  try {
+    const r = await fetch(API + '/admin/summary', { headers: { 'X-Admin-Key': ADMIN_KEY } });
+    const d = await r.json();
+    document.getElementById('sm-users').innerText = d.totalUsers || 0;
+    document.getElementById('sm-feeds').innerText = d.totalFeeds || 0;
+    document.getElementById('sm-mthy').innerText = (d.totalMthy || 0).toLocaleString();
+    document.getElementById('sm-avghp').innerText = (d.avgHp || 0) + '%';
+  } catch (e) {}
+}
+
+async function loadUsers() {
+  try {
+    const r = await fetch(API + '/admin/users', { headers: { 'X-Admin-Key': ADMIN_KEY } });
+    if (r.status === 401) { toast('Auth failed'); return; }
+    const d = await r.json();
+    const users = d.users || [];
+    document.getElementById('user-count').innerText = users.length;
+    document.getElementById('users-body').innerHTML = users.map(u => `<tr>
+      <td><code style="font-size:10px;color:var(--gb);">${shortAddr(u.wallet)}</code></td>
+      <td>${u.display_name || '—'}</td>
+      <td><span style="color:var(--gb);font-weight:600;">${Math.round((u.mthy_balance || 0) * 100) / 100}</span></td>
+      <td style="font-size:10px;">${u.created_at || '—'}</td>
+      <td style="font-size:10px;">${timeAgo(u.last_seen)}</td>
+      <td><button class="btn btn-primary" style="padding:4px 10px;font-size:10px;" onclick="document.getElementById('add-wallet').value='${u.wallet}';showSection('users');">+ $MTHY</button></td>
+    </tr>`).join('');
+  } catch (e) {}
+}
+
+async function loadStaked() {
+  try {
+    const r = await fetch(API + '/stake/all?limit=200');
+    const d = await r.json();
+    allStakedData = d.staked || [];
+    document.getElementById('staked-count').innerText = allStakedData.length;
+    document.getElementById('staked-body').innerHTML = allStakedData.map(n => {
+      const bc = n.hp >= 80 ? 'badge-green' : n.hp >= 50 ? 'badge-amber' : 'badge-red';
+      return `<tr>
+        <td><code style="color:var(--gb);">#${n.token_id}</code></td>
+        <td>${n.name}</td>
+        <td><code style="font-size:10px;">${shortAddr(n.wallet)}</code></td>
+        <td><span class="badge ${bc}">${n.hp}%</span></td>
+        <td style="font-size:10px;">${timeAgo(n.staked_at)}</td>
+        <td style="font-size:10px;">${timeAgo(n.last_fed)}</td>
+        <td><button class="btn btn-danger" style="padding:4px 10px;font-size:10px;" onclick="forceUnstake('${n.wallet}','${n.token_id}')">Remove</button></td>
+      </tr>`;
+    }).join('');
+    renderHPChart();
+    renderStatusChart();
+  } catch (e) {}
+}
+
+async function loadMuseum() {
+  try {
+    const r = await fetch(API + '/museum?limit=200');
+    const d = await r.json();
+    const exhibits = d.exhibits || [];
+    document.getElementById('museum-count').innerText = exhibits.length;
+    document.getElementById('museum-body').innerHTML = exhibits.map(n => `<tr>
+      <td><code style="color:var(--amber);">#${n.token_id}</code></td>
+      <td>${n.name}</td>
+      <td><code style="font-size:10px;">${shortAddr(n.original_owner)}</code></td>
+      <td><code style="font-size:10px;">${shortAddr(n.caught_by)}</code></td>
+      <td style="font-size:11px;">${n.reason || '—'}</td>
+      <td style="font-size:10px;">${timeAgo(n.caught_at)}</td>
+    </tr>`).join('');
+  } catch (e) {}
+}
+
+async function loadConfig() {
+  try {
+    const r = await fetch(API + '/admin/config', { headers: { 'X-Admin-Key': ADMIN_KEY } });
+    const d = await r.json();
+    if (d.config) {
+      if (d.config.earn_rate_per_day) document.getElementById('cfg-earn').value = d.config.earn_rate_per_day;
+      if (d.config.feed_cost) document.getElementById('cfg-feed').value = d.config.feed_cost;
+      if (d.config.museum_earn) document.getElementById('cfg-museum').value = d.config.museum_earn;
+      if (d.config.max_survivors) document.getElementById('cfg-survivors').value = d.config.max_survivors;
+      if (d.config.catch_threshold) document.getElementById('cfg-catch').value = d.config.catch_threshold;
+      if (d.config.min_played_to_end) document.getElementById('cfg-minplayed').value = d.config.min_played_to_end;
+      if (d.config.welcome_bonus) document.getElementById('cfg-welcome').value = d.config.welcome_bonus;
+      document.getElementById('cfg-ticker').value = d.config.ticker_message || '';
+      // Token name
+      if (d.config.token_name) {
+        document.getElementById('cfg-token-name').value = d.config.token_name;
+        updateAdminTokenLabels(d.config.token_name);
+      }
+      // Collection addresses
+      if (d.config.collection_cosmos) document.getElementById('cfg-cosmos-ca').value = d.config.collection_cosmos;
+      if (d.config.collection_stars) document.getElementById('cfg-stars-ca').value = d.config.collection_stars;
+      // Trait bonuses
+      try { traitRules = JSON.parse(d.config.trait_bonuses || '[]'); } catch(e) { traitRules = []; }
+      renderTraitRules();
+    }
+  } catch (e) {}
+}
+
+// Update all admin panel labels when token name changes
+function updateAdminTokenLabels(name) {
+  document.getElementById('lbl-feed-cost').textContent = 'Feed Cost (' + name + ')';
+  // Update stat card label
+  const mthyLabel = document.querySelector('.stat-card.green .stat-card-label');
+  if (mthyLabel) mthyLabel.textContent = name + ' in Circulation';
+  // Update table header
+  const headers = document.querySelectorAll('thead th');
+  headers.forEach(th => { if (th.textContent.includes('Balance')) th.textContent = name + ' Balance'; });
+  // Update add-mthy section
+  const addSection = document.querySelector('.form-card h3');
+  document.querySelectorAll('.form-card h3').forEach(h => {
+    if (h.textContent.includes('$MTHY') || h.textContent.includes('Add ')) h.textContent = 'Add ' + name + ' to User';
+  });
+  // Update buttons
+  document.querySelectorAll('.btn.btn-primary').forEach(btn => {
+    if (btn.textContent.includes('$MTHY') || btn.textContent.includes('Add ')) {
+      if (btn.onclick && btn.getAttribute('onclick')?.includes('addMthy')) btn.textContent = 'Add ' + name;
+    }
+  });
+  // Update trait bonus description
+  const traitDesc = document.querySelector('.form-card p');
+  document.querySelectorAll('.form-card p').forEach(p => {
+    if (p.textContent.includes('/day on top of')) {
+      p.textContent = 'NFTs with matching traits earn extra ' + name + '/day on top of the base rate. Traits are fetched from Stargaze metadata when staked. Use * as value to match any value for that trait.';
+    }
+  });
+}
+
+// Live preview: update labels when token name input changes
+document.addEventListener('DOMContentLoaded', () => {
+  const tokenInput = document.getElementById('cfg-token-name');
+  if (tokenInput) {
+    tokenInput.addEventListener('input', () => updateAdminTokenLabels(tokenInput.value || '$MTHY'));
+  }
+});
+
+async function loadFeedHistory() {
+  try {
+    const r = await fetch(API + '/admin/feed-history?limit=20', { headers: { 'X-Admin-Key': ADMIN_KEY } });
+    const d = await r.json();
+    const history = d.history || [];
+    document.getElementById('activity-feed').innerHTML = history.length === 0
+      ? '<div style="color:var(--td);font-size:12px;padding:20px 0;text-align:center;">No activity yet</div>'
+      : history.map(h => `<div class="activity-item">
+          <div class="activity-icon feed">🌿</div>
+          <div class="activity-text"><b>${shortAddr(h.wallet)}</b> fed <b>#${h.token_id}</b></div>
+          <div class="activity-time">${timeAgo(h.fed_at)}</div>
+        </div>`).join('');
+  } catch (e) {}
+}
+
+async function loadCatchStats() {
+  try {
+    const r = await fetch(API + '/leaderboard/catch-stats');
+    const d = await r.json();
+    renderCatchChart(d.days || []);
+  } catch (e) {}
+}
+
+// === CHARTS ===
+function renderHPChart() {
+  const ctx = document.getElementById('chart-hp');
+  if (!ctx) return;
+  const buckets = { '90-100': 0, '70-89': 0, '50-69': 0, '30-49': 0, '0-29': 0 };
+  for (const n of allStakedData) {
+    if (n.hp >= 90) buckets['90-100']++;
+    else if (n.hp >= 70) buckets['70-89']++;
+    else if (n.hp >= 50) buckets['50-69']++;
+    else if (n.hp >= 30) buckets['30-49']++;
+    else buckets['0-29']++;
+  }
+  if (hpChart) hpChart.destroy();
+  hpChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(buckets),
+      datasets: [{
+        data: Object.values(buckets),
+        backgroundColor: ['#76ff03', '#4caf50', '#ffb300', '#ff9100', '#f44336'],
+        borderRadius: 6, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+}
+
+function renderStatusChart() {
+  const ctx = document.getElementById('chart-status');
+  if (!ctx) return;
+  const alive = allStakedData.length;
+  const dead = parseInt(document.getElementById('s-dead').innerText) || 0;
+  if (statusChart) statusChart.destroy();
+  statusChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Alive', 'Museum'],
+      datasets: [{
+        data: [alive, dead],
+        backgroundColor: ['#76ff03', '#f44336'],
+        borderWidth: 0, spacing: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyle: 'circle' } }
+      }
+    }
+  });
+}
+
+function renderCatchChart(days) {
+  const ctx = document.getElementById('chart-catches');
+  if (!ctx) return;
+  const reversed = [...days].reverse();
+  if (catchChart) catchChart.destroy();
+  catchChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: reversed.map(d => d.day ? d.day.slice(5) : ''),
+      datasets: [{
+        data: reversed.map(d => d.count),
+        backgroundColor: 'rgba(255,23,68,0.6)',
+        borderRadius: 4, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+}
+
+// === ACTIONS ===
+async function addMthy() {
+  const wallet = document.getElementById('add-wallet').value;
+  const amount = Number(document.getElementById('add-amount').value);
+  if (!wallet || !amount) { toast('Fill all fields'); return; }
+  try {
+    const r = await fetch(API + '/admin/add-mthy', { method: 'POST', headers: adminH(), body: JSON.stringify({ wallet, amount }) });
+    const d = await r.json();
+    toast(d.message || 'Done');
+    loadUsers();
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+async function forceCatch() {
+  const tokenId = document.getElementById('catch-token').value;
+  if (!tokenId) { toast('Enter token ID'); return; }
+  try {
+    const r = await fetch(API + '/admin/force-catch', { method: 'POST', headers: adminH(), body: JSON.stringify({ tokenId }) });
+    const d = await r.json();
+    toast(d.message || 'Done');
+    loadAll();
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+async function forceUnstake(wallet, tokenId) {
+  if (!confirm('Remove #' + tokenId + ' from garden?')) return;
+  try {
+    const r = await fetch(API + '/stake/unstake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wallet, tokenId }) });
+    const d = await r.json();
+    toast(d.message || 'Removed');
+    loadAll();
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+async function saveConfig() {
+  const earn_rate = Number(document.getElementById('cfg-earn').value);
+  const feed_cost = Number(document.getElementById('cfg-feed').value);
+  const museum_earn = Number(document.getElementById('cfg-museum').value);
+  const max_survivors = Number(document.getElementById('cfg-survivors').value);
+  const catch_threshold = Number(document.getElementById('cfg-catch').value);
+  const min_played_to_end = Number(document.getElementById('cfg-minplayed').value);
+  const welcome_bonus = Number(document.getElementById('cfg-welcome').value);
+  const ticker_message = document.getElementById('cfg-ticker').value;
+  const token_name = document.getElementById('cfg-token-name').value.trim() || '$MTHY';
+  try {
+    const r = await fetch(API + '/admin/config', { method: 'POST', headers: adminH(), body: JSON.stringify({ earn_rate, feed_cost, museum_earn, max_survivors, catch_threshold, min_played_to_end, welcome_bonus, ticker_message, token_name }) });
+    const d = await r.json();
+    toast(d.message || 'Saved');
+    updateAdminTokenLabels(token_name);
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+async function resetGame() {
+  if (!confirm('Are you sure? This will DELETE ALL game data!')) return;
+  if (!confirm('REALLY? This cannot be undone.')) return;
+  try {
+    const r = await fetch(API + '/admin/reset', { method: 'POST', headers: adminH(), body: JSON.stringify({ confirm: 'RESET_GAME' }) });
+    const d = await r.json();
+    toast(d.message || 'Reset');
+    loadAll();
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+async function endGame() {
+  if (!confirm('Declare the top 20 NFTs as WINNERS and freeze the game?')) return;
+  if (!confirm('REALLY? This freezes all game activity.')) return;
+  try {
+    const r = await fetch(API + '/admin/end-game', { method: 'POST', headers: adminH(), body: JSON.stringify({ confirm: 'END_GAME' }) });
+    const d = await r.json();
+    if (d.error) { toast(d.error); return; }
+    toast(d.message || 'Game ended!');
+    loadWinners();
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+async function undoEndGame() {
+  if (!confirm('Undo end game? This will DELETE all winners and resume the game.')) return;
+  try {
+    const r = await fetch(API + '/admin/undo-end-game', { method: 'POST', headers: adminH(), body: JSON.stringify({ confirm: 'UNDO_END_GAME' }) });
+    const d = await r.json();
+    if (d.error) { toast(d.error); return; }
+    toast(d.message || 'Game resumed!');
+    loadAll();
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+async function loadWinners() {
+  try {
+    const r = await fetch(API + '/admin/winners', { headers: { 'X-Admin-Key': ADMIN_KEY } });
+    const d = await r.json();
+    const winners = d.winners || [];
+    const statusEl = document.getElementById('endgame-status');
+    const listEl = document.getElementById('winners-list');
+    const btn = document.getElementById('btn-endgame');
+    const undoBtn = document.getElementById('btn-undo-endgame');
+    if (winners.length === 0) {
+      statusEl.innerHTML = '<span class="badge badge-green">Game Running</span>';
+      listEl.innerHTML = '';
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+      if (undoBtn) undoBtn.style.display = 'none';
+      return;
+    }
+    statusEl.innerHTML = '<span class="badge badge-amber">GAME ENDED</span> — ' + winners.length + ' winners declared';
+    if (btn) { btn.disabled = true; btn.style.opacity = '.4'; }
+    if (undoBtn) undoBtn.style.display = 'inline-flex';
+    listEl.innerHTML = '<div class="table-card"><h3>Winners <span class="count">' + winners.length + '</span></h3><div class="table-scroll"><table><thead><tr><th>Token</th><th>Name</th><th>Owner</th><th>HP</th><th>Days</th><th>Claimed</th><th>Wallet</th><th>Discord</th><th>Twitter</th></tr></thead><tbody>' +
+      winners.map(w => `<tr>
+        <td><code style="color:var(--amber);">#${w.token_id}</code></td>
+        <td>${w.name}</td>
+        <td><code style="font-size:10px;">${shortAddr(w.wallet)}</code></td>
+        <td>${w.hp}%</td>
+        <td>${w.days_survived}d</td>
+        <td>${w.claimed_at ? '<span class="badge badge-green">Claimed</span>' : '<span class="badge badge-red">Pending</span>'}</td>
+        <td style="font-size:10px;">${w.claim_wallet ? shortAddr(w.claim_wallet) : '—'}</td>
+        <td style="font-size:10px;">${w.claim_discord || '—'}</td>
+        <td style="font-size:10px;">${w.claim_twitter || '—'}</td>
+      </tr>`).join('') + '</tbody></table></div></div>';
+  } catch (e) {}
+}
+
+// === TRAIT BONUSES ===
+let traitRules = [];
+
+function renderTraitRules() {
+  const el = document.getElementById('trait-rules-list');
+  if (!el) return;
+  if (traitRules.length === 0) {
+    el.innerHTML = '<div style="color:var(--td);font-size:12px;padding:12px 0;">No trait bonuses configured. All NFTs earn the base rate.</div>';
+    return;
+  }
+  el.innerHTML = '<table><thead><tr><th>Trait Name</th><th>Trait Value</th><th>Bonus/Day</th><th></th></tr></thead><tbody>' +
+    traitRules.map((r, i) => `<tr>
+      <td style="color:var(--gb);font-weight:600;">${r.trait_name}</td>
+      <td>${r.trait_value === '*' ? '<span class="badge badge-blue">Any</span>' : r.trait_value}</td>
+      <td style="color:var(--gb);">+${r.bonus}</td>
+      <td><button class="btn btn-danger" style="padding:3px 8px;font-size:10px;" onclick="removeTraitRule(${i})">×</button></td>
+    </tr>`).join('') + '</tbody></table>';
+}
+
+function addTraitRule() {
+  const name = document.getElementById('tr-name').value.trim();
+  const value = document.getElementById('tr-value').value.trim() || '*';
+  const bonus = Number(document.getElementById('tr-bonus').value);
+  if (!name || !bonus) { toast('Fill trait name and bonus'); return; }
+  traitRules.push({ trait_name: name, trait_value: value, bonus });
+  renderTraitRules();
+  saveTraitBonuses();
+  document.getElementById('tr-name').value = '';
+  document.getElementById('tr-value').value = '';
+  document.getElementById('tr-bonus').value = '';
+}
+
+function removeTraitRule(idx) {
+  traitRules.splice(idx, 1);
+  renderTraitRules();
+  saveTraitBonuses();
+}
+
+async function saveTraitBonuses() {
+  try {
+    await fetch(API + '/admin/config', { method: 'POST', headers: adminH(), body: JSON.stringify({ trait_bonuses: traitRules }) });
+    toast('Trait bonuses saved');
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+// === CHANGE COLLECTION ===
+async function changeCollection() {
+  const newCA = document.getElementById('cfg-new-ca').value.trim();
+  if (!newCA || !newCA.startsWith('cosmos1')) { toast('Enter a valid cosmos1... address'); return; }
+  if (!confirm('WARNING: This will RESET the entire game and switch to a new NFT collection. All data will be deleted. Continue?')) return;
+  if (!confirm('REALLY? All users, staked NFTs, museum, winners will be deleted.')) return;
+  try {
+    const r = await fetch(API + '/admin/change-collection', { method: 'POST', headers: adminH(), body: JSON.stringify({ cosmosAddr: newCA, confirm: 'CHANGE_COLLECTION' }) });
+    const d = await r.json();
+    if (d.error) { toast(d.error); return; }
+    toast(d.message || 'Collection changed!');
+    document.getElementById('cfg-new-ca').value = '';
+    loadAll();
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+// === LOAD ALL ===
+function loadAll() {
+  loadHealth();
+  loadStats();
+  loadSummary();
+  loadUsers();
+  loadStaked();
+  loadMuseum();
+  loadConfig();
+  loadFeedHistory();
+  loadCatchStats();
+  loadWinners();
+}
+setInterval(() => { if (ADMIN_KEY) loadAll(); }, 30000);
+</script>
+</body>
+</html>

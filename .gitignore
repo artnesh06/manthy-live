@@ -1,0 +1,14 @@
+node_modules/
+server/node_modules/
+server/manthy.db
+server/manthy.db-shm
+server/manthy.db-wal
+server/backups/
+.env
+.env.local
+.vercel
+.DS_Store
+ADMIN_CREDENTIALS.md
+.claude/
+server/_bak/
+server/*.db.bak-*
